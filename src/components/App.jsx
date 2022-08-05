@@ -1,16 +1,22 @@
-export const App = () => {
-  return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 50,
-        color: '#010101',
-      }}
-    >
-      React homework template
-    </div>
-  );
-};
+import { ApiService, Button, Galery, GaleryItem } from 'components';
+import { Component } from 'react';
+
+export class App extends Component {
+  state = {
+    components: '',
+  };
+
+  componentDidMount() {}
+
+  render() {
+    const api = new ApiService();
+    return (
+      <>
+        <Galery>
+          <GaleryItem />
+        </Galery>
+        <Button />
+      </>
+    );
+  }
+}
