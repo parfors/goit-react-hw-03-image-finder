@@ -8,7 +8,6 @@ import {
   Loader,
   Modal,
 } from 'components';
-
 export class Gallery extends Component {
   api = new ApiService();
 
@@ -17,26 +16,31 @@ export class Gallery extends Component {
     searchQuery: '',
     page: 1,
     loading: false,
+    showBtn: true,
     modalImg: '',
     isOpen: false,
+    noImgError: false,
+    error: false,
   };
 
-  // componentDidMount() {
-  //   this.api.getFitData('cat').then(data => this.setState({ images: data }));
-  // }
-
   componentDidUpdate(prevProps, prevState) {
-    const { searchQuery, page } = this.state;
+    const { searchQuery, page, images } = this.state;
     if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
       this.setState({ loading: true });
       this.api
         .getImg(searchQuery, page)
         .then(data => {
-          this.setState(prevState => ({
-            images: [...prevState.images, ...data.hits],
-          }));
-          console.log(data);
+          if (data.totalHits === 0) {
+            this.setState({ noImgError: true });
+          }
+          {
+            this.setState(prevState => ({
+              images: [...prevState.images, ...data.hits],
+              showBtn: !(data.totalHits === images.length),
+            }));
+          }
         })
+        .catch(error => this.setState({ error: error.message }))
         .finally(this.setState({ loading: false }));
     }
   }
@@ -44,8 +48,12 @@ export class Gallery extends Component {
   onSubmit = data => {
     this.setState({
       searchQuery: data,
+      loading: true,
       images: [],
       page: 1,
+      noImgError: false,
+      error: false,
+      showBtn: true,
     });
   };
 
@@ -60,20 +68,31 @@ export class Gallery extends Component {
     });
   };
 
-  closeMadal = () => {
+  closeModal = () => {
     this.setState({
       isOpen: false,
     });
   };
 
   render() {
-    const { images, loading, isOpen, modalImg } = this.state;
+    const { images, loading, isOpen, modalImg, noImgError, error, showBtn } =
+      this.state;
     return (
       <>
         <SearchBar onSubmit={this.onSubmit} />
 
-        {images.length === 0 && (
+        {!noImgError && !loading && images.length === 0 && (
           <p className={css.galleryText}>Hello try to find some images</p>
+        )}
+
+        {noImgError && (
+          <p className={css.galleryText}>There is no images for this query</p>
+        )}
+
+        {error && (
+          <p className={css.galleryText}>
+            Something went wrong. Please try again later {error}
+          </p>
         )}
 
         <ul className={css.ImageGallery}>
@@ -87,9 +106,9 @@ export class Gallery extends Component {
           ))}
         </ul>
 
-        {images.length > 0 && !loading && (
+        {images.length > 0 && !loading && showBtn && (
           <span className={css.galleryText}>
-            <Button onClick={this.loadMore} />
+            <Button disabled={loading} onClick={this.loadMore} />
           </span>
         )}
         {loading && (
@@ -97,7 +116,7 @@ export class Gallery extends Component {
             <Loader visible={loading} />
           </span>
         )}
-        {isOpen && <Modal modalImg={modalImg} onClose={this.closeMadal} />}
+        {isOpen && <Modal modalImg={modalImg} onClose={this.closeModal} />}
       </>
     );
   }
