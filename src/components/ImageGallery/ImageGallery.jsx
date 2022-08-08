@@ -1,5 +1,7 @@
 import css from './ImageGallery.module.css';
 import { Component } from 'react';
+import { createPortal } from 'react-dom';
+
 import {
   ApiService,
   GalleryItem,
@@ -10,6 +12,7 @@ import {
 } from 'components';
 export class Gallery extends Component {
   api = new ApiService();
+  modalEl = document.querySelector('#modal-root');
 
   state = {
     images: [],
@@ -33,12 +36,11 @@ export class Gallery extends Component {
           if (data.totalHits === 0) {
             this.setState({ noImgError: true });
           }
-          {
-            this.setState(prevState => ({
-              images: [...prevState.images, ...data.hits],
-              showBtn: !(data.totalHits === images.length),
-            }));
-          }
+
+          this.setState(prevState => ({
+            images: [...prevState.images, ...data.hits],
+            showBtn: !(data.totalHits === images.length),
+          }));
         })
         .catch(error => this.setState({ error: error.message }))
         .finally(this.setState({ loading: false }));
@@ -80,21 +82,17 @@ export class Gallery extends Component {
     return (
       <>
         <SearchBar onSubmit={this.onSubmit} />
-
         {!noImgError && !loading && images.length === 0 && (
           <p className={css.galleryText}>Hello try to find some images</p>
         )}
-
         {noImgError && (
           <p className={css.galleryText}>There is no images for this query</p>
         )}
-
         {error && (
           <p className={css.galleryText}>
             Something went wrong. Please try again later {error}
           </p>
         )}
-
         <ul className={css.ImageGallery}>
           {images.map(({ id, webformatURL, largeImageURL }) => (
             <GalleryItem
@@ -105,7 +103,6 @@ export class Gallery extends Component {
             />
           ))}
         </ul>
-
         {images.length > 0 && !loading && showBtn && (
           <span className={css.galleryText}>
             <Button disabled={loading} onClick={this.loadMore} />
@@ -116,7 +113,10 @@ export class Gallery extends Component {
             <Loader visible={loading} />
           </span>
         )}
-        {isOpen && <Modal modalImg={modalImg} onClose={this.closeModal} />}
+        {createPortal(
+          isOpen && <Modal modalImg={modalImg} onClose={this.closeModal} />,
+          this.modalEl
+        )}
       </>
     );
   }
