@@ -1,7 +1,7 @@
 import { TailSpin } from 'react-loader-spinner';
 import css from './Loader.module.css';
 
-export const Loader = ({ visible }) => {
+export const Loader = () => {
   return (
     <TailSpin
       height="80"
@@ -11,7 +11,7 @@ export const Loader = ({ visible }) => {
       radius="1"
       wrapperStyle={{}}
       wrapperClass={css.Loader}
-      visible={visible}
+      visible={true}
     />
   );
 };

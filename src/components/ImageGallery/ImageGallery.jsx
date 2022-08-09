@@ -18,42 +18,53 @@ export class Gallery extends Component {
     images: [],
     searchQuery: '',
     page: 1,
-    loading: false,
+    // loading: false,
     showBtn: true,
     modalImg: '',
     isOpen: false,
-    noImgError: false,
+    // noImgError: false,
     error: false,
+    status: 'idle',
   };
 
   componentDidUpdate(prevProps, prevState) {
     const { searchQuery, page, images } = this.state;
     if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
-      this.setState({ loading: true });
+      this.setState({ status: 'loading' });
       this.api
         .getImg(searchQuery, page)
         .then(data => {
           if (data.totalHits === 0) {
-            this.setState({ noImgError: true });
+            this.setState({ status: 'noImg' });
+            return;
           }
 
           this.setState(prevState => ({
             images: [...prevState.images, ...data.hits],
             showBtn: !(data.totalHits === images.length),
+            status: 'resolved',
           }));
         })
-        .catch(error => this.setState({ error: error.message }))
-        .finally(this.setState({ loading: false }));
+        .catch(error =>
+          this.setState({
+            error: error.message,
+            status: 'error',
+          })
+        );
     }
   }
 
   onSubmit = data => {
+    if (data === '') {
+      this.setState({ status: 'emptySearch' });
+      return;
+    }
     this.setState({
       searchQuery: data,
-      loading: true,
+      // loading: true,
       images: [],
       page: 1,
-      noImgError: false,
+      // noImgError: false,
       error: false,
       showBtn: true,
     });
@@ -77,12 +88,50 @@ export class Gallery extends Component {
   };
 
   render() {
-    const { images, loading, isOpen, modalImg, noImgError, error, showBtn } =
-      this.state;
+    const {
+      images,
+      // loading,
+      isOpen,
+      modalImg,
+      // noImgError,
+      error,
+      showBtn,
+      status,
+    } = this.state;
+
+    let paragraph;
+
+    if (status === 'idle') {
+      paragraph = (
+        <p className={css.galleryText}>Hello try to find some images</p>
+      );
+    } else if (status === 'loading') {
+      paragraph = (
+        <span className={css.galleryText}>
+          <Loader />
+        </span>
+      );
+    } else if (status === 'noImg') {
+      paragraph = (
+        <p className={css.galleryText}>There is no images for this query</p>
+      );
+    } else if (status === 'error') {
+      paragraph = (
+        <p className={css.galleryText}>
+          Something went wrong. Please try again later. Error description:
+          {error}
+        </p>
+      );
+    } else if (status === 'emptySearch') {
+      paragraph = <p className={css.galleryText}>Please enter your query.</p>;
+    }
+
     return (
       <>
         <SearchBar onSubmit={this.onSubmit} />
-        {!noImgError && !loading && images.length === 0 && (
+        {paragraph}
+
+        {/* {!noImgError && !loading && images.length === 0 && (
           <p className={css.galleryText}>Hello try to find some images</p>
         )}
         {noImgError && (
@@ -93,6 +142,11 @@ export class Gallery extends Component {
             Something went wrong. Please try again later {error}
           </p>
         )}
+        {loading && (
+          <span className={css.galleryText}>
+            <Loader visible={loading} />
+          </span>
+        )} */}
         <ul className={css.ImageGallery}>
           {images.map(({ id, webformatURL, largeImageURL }) => (
             <GalleryItem
@@ -103,16 +157,12 @@ export class Gallery extends Component {
             />
           ))}
         </ul>
-        {images.length > 0 && !loading && showBtn && (
+        {showBtn && status === 'resolved' && (
           <span className={css.galleryText}>
-            <Button disabled={loading} onClick={this.loadMore} />
+            <Button disabled={status === 'loading'} onClick={this.loadMore} />
           </span>
         )}
-        {loading && (
-          <span className={css.galleryText}>
-            <Loader visible={loading} />
-          </span>
-        )}
+
         {createPortal(
           isOpen && <Modal modalImg={modalImg} onClose={this.closeModal} />,
           this.modalEl

@@ -1,5 +1,6 @@
 import css from './ImageGalleryItem.module.css';
 import { Component } from 'react';
+import PropTypes from 'prop-types';
 
 export class GalleryItem extends Component {
   clickHandler = () => {
@@ -22,3 +23,9 @@ export class GalleryItem extends Component {
     );
   }
 }
+
+GalleryItem.propTypes = {
+  onClick: PropTypes.func,
+  largeImageURL: PropTypes.string,
+  webUrl: PropTypes.string,
+};
